@@ -1,0 +1,38 @@
+FROM kamailio
+
+# Use ubuntu as default username
+USER ubuntu
+WORKDIR /home/ubuntu
+
+# Import environment variable to pass as parameter to make (e.g., to make parallel builds with -j)
+ARG MAKE_OPT
+
+# Set up Snapfuzz
+ENV SNAPFUZZ="/home/ubuntu/aflsnapfuzz"
+
+RUN git clone https://github.com/RiscInside/bootstrap-snapfuzz.git ${SNAPFUZZ}
+
+# Install dependencies
+USER root
+RUN bash ${SNAPFUZZ}/apt-install-deps.sh
+USER ubuntu
+
+# Build Snapfuzz
+RUN bash ${SNAPFUZZ}/build.sh
+
+# Set up environment variables for Snapfuzz
+ENV AFL_PATH=${SNAPFUZZ}/builds/aflnet
+ENV PATH=${SNAPFUZZ}:${PATH}
+
+# Download and compile Kamalio for fuzzing
+RUN cd $WORKDIR && \
+    git clone https://github.com/kamailio/kamailio.git kamailio-aflsnapfuzz && \
+    cd kamailio-aflsnapfuzz && \
+    git checkout 2648eb3 && \
+    patch -p1 < $WORKDIR/kamailio.patch && \
+    CC=afl-clang-fast make MEMPKG=sys cfg && \
+    CC=afl-clang-fast make all $MAKE_OPT && \
+    cp ${SNAPFUZZ}/sabre ./ && \
+    cp ${SNAPFUZZ}/libsbr-afl.so ./
+
+COPY --chown=ubuntu:ubuntu run-aflsnapfuzz.sh ${WORKDIR}/run-aflsnapfuzz

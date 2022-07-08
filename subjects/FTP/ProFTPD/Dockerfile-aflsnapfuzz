@@ -1,0 +1,37 @@
+FROM proftpd
+
+# Use ubuntu as default username
+USER ubuntu
+WORKDIR /home/ubuntu
+
+# Import environment variable to pass as parameter to make (e.g., to make parallel builds with -j)
+ARG MAKE_OPT
+
+# Set up Snapfuzz
+ENV SNAPFUZZ="/home/ubuntu/aflsnapfuzz"
+
+RUN git clone https://github.com/RiscInside/bootstrap-snapfuzz.git ${SNAPFUZZ}
+
+# Install dependencies
+USER root
+RUN bash ${SNAPFUZZ}/apt-install-deps.sh
+USER ubuntu
+
+# Build Snapfuzz
+RUN bash ${SNAPFUZZ}/build.sh
+
+# Set up environment variables for Snapfuzz
+ENV AFL_PATH=${SNAPFUZZ}/builds/aflnet
+ENV PATH=${SNAPFUZZ}:${PATH}
+
+# Download and compile ProFTPD without AddressSanitizer for fuzzing
+RUN cd ${WORKDIR} && \
+    git clone https://github.com/proftpd/proftpd.git proftpd-aflsnapfuzz && \
+    cd proftpd-aflsnapfuzz && \
+    git checkout 4017eff8 && \
+    CC="afl-clang-fast" CXX="afl-clang-fast++" ./configure --enable-devel=nodaemon:nofork && \
+    make $MAKE_OPT && \
+    cp ${SNAPFUZZ}/sabre ./ && \
+    cp ${SNAPFUZZ}/libsbr-afl.so ./
+
+COPY --chown=ubuntu:ubuntu run-aflsnapfuzz.sh ${WORKDIR}/run-aflsnapfuzz

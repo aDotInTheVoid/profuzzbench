@@ -1,0 +1,39 @@
+FROM pure-ftpd
+
+# Use ubuntu as default username
+USER ubuntu
+WORKDIR /home/ubuntu
+
+# Import environment variable to pass as parameter to make (e.g., to make parallel builds with -j)
+ARG MAKE_OPT
+
+# Set up Snapfuzz
+ENV SNAPFUZZ="/home/ubuntu/aflsnapfuzz"
+
+RUN git clone https://github.com/RiscInside/bootstrap-snapfuzz.git ${SNAPFUZZ}
+
+# Install dependencies
+USER root
+RUN bash ${SNAPFUZZ}/apt-install-deps.sh
+USER ubuntu
+
+# Build Snapfuzz
+RUN bash ${SNAPFUZZ}/build.sh
+
+# Set up environment variables for Snapfuzz
+ENV AFL_PATH=${SNAPFUZZ}/builds/aflnet
+ENV PATH=${SNAPFUZZ}:${PATH}
+
+# Set up PureFTPD for fuzzing
+RUN cd ${WORKDIR} && \
+    git clone https://github.com/jedisct1/pure-ftpd.git pure-ftpd-aflsnapfuzz && \
+    cd pure-ftpd-aflsnapfuzz && \
+    git checkout c21b45f && \
+    patch -p1 < ${WORKDIR}/fuzzing.patch && \
+    ./autogen.sh && \
+    CC="afl-clang-fast" CXX="afl-clang-fast++" CFLAGS="-g -O0" CXXFLAGS="-g -O0" ./configure --without-privsep -without-capabilities && \
+    make $MAKE_OPT && \
+    cp ${SNAPFUZZ}/sabre ./ && \
+    cp ${SNAPFUZZ}/libsbr-afl.so ./
+
+COPY --chown=ubuntu:ubuntu run-aflsnapfuzz.sh ${WORKDIR}/run-aflsnapfuzz

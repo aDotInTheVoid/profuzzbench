@@ -1,0 +1,38 @@
+FROM exim
+
+# Use ubuntu as default username
+USER ubuntu
+WORKDIR /home/ubuntu
+
+# Import environment variable to pass as parameter to make (e.g., to make parallel builds with -j)
+ARG MAKE_OPT
+
+# Set up Snapfuzz
+ENV SNAPFUZZ="/home/ubuntu/aflsnapfuzz"
+
+RUN git clone https://github.com/RiscInside/bootstrap-snapfuzz.git ${SNAPFUZZ}
+
+# Install dependencies
+USER root
+RUN bash ${SNAPFUZZ}/apt-install-deps.sh
+USER ubuntu
+
+# Build Snapfuzz
+RUN bash ${SNAPFUZZ}/build.sh
+
+# Set up environment variables for Snapfuzz
+ENV AFL_PATH=${SNAPFUZZ}/builds/aflnet
+ENV PATH=${SNAPFUZZ}:${PATH}
+
+# Download and compile Exim for fuzzing
+RUN cd ${WORKDIR} && \
+    git clone https://github.com/Exim/exim exim-aflsnapfuzz && \
+    cd exim-aflsnapfuzz && \
+    git checkout 38903fb && \
+    patch -p1 < ${WORKDIR}/exim-rand.patch && \
+    patch -p1 < ${WORKDIR}/exim-log-bug.patch && \
+    cd src; mkdir Local; cp src/EDITME Local/Makefile && \
+    cd Local; patch -p1 < ${WORKDIR}/exim.patch; cd .. && \
+    make CC=afl-clang-fast clean all $MAKE_OPT
+
+COPY --chown=ubuntu:ubuntu run-aflsnapfuzz.sh ${WORKDIR}/run-aflsnapfuzz

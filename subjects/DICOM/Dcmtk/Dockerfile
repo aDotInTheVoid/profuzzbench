@@ -63,6 +63,7 @@ RUN mkdir $WORKDIR
 
 USER root
 RUN apt-get -y install cmake
+USER ubuntu
 
 COPY --chown=ubuntu:ubuntu fuzzing.patch ${WORKDIR}/fuzzing.patch
 COPY --chown=ubuntu:ubuntu normal.patch ${WORKDIR}/normal.patch

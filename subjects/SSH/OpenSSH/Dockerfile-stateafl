@@ -11,7 +11,6 @@ ENV STATEAFL_CFLAGS="-DBLACKLIST_ALLOC_SITES"
 RUN git clone https://github.com/stateafl/stateafl.git $STATEAFL && \
     cd $STATEAFL && \
     CFLAGS="${REPLAYER_CFLAGS}" make clean all $MAKE_OPT && \
-    rm as && \
     cd llvm_mode && CFLAGS="${STATEAFL_CFLAGS}" make $MAKE_OPT
 
 # Set up environment variables for StateAFL
@@ -30,16 +29,12 @@ RUN cd ${WORKDIR} && \
     CC=${STATEAFL}/afl-clang-fast \
     CFLAGS="-g -O3" \
     --prefix=$PWD/install \
-    --with-openssl=$WORKDIR/openssl-install \
-    CFLAGS="-I$WORKDIR/openssl-install/include" \
-    --with-ldflags="-L$WORKDIR/openssl-install/lib" \
     --with-privsep-path=$PWD/var-empty \
     --with-sandbox=no \
     --with-privsep-user=ubuntu && \
     make $MAKE_OPT && \
     make install
 
-COPY --chown=ubuntu:ubuntu in-ssh-replay ${WORKDIR}/in-ssh-replay
 COPY --chown=ubuntu:ubuntu run-stateafl.sh ${WORKDIR}/run-stateafl
 COPY --chown=ubuntu:ubuntu blacklist_alloc.sh ${WORKDIR}/blacklist_alloc.sh
 

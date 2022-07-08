@@ -1,0 +1,37 @@
+FROM bftpd
+
+# Use ubuntu as default username
+USER ubuntu
+WORKDIR /home/ubuntu
+
+# Import environment variable to pass as parameter to make (e.g., to make parallel builds with -j)
+ARG MAKE_OPT
+
+# Set up Snapfuzz
+ENV SNAPFUZZ="/home/ubuntu/aflsnapfuzz"
+
+RUN git clone https://github.com/RiscInside/bootstrap-snapfuzz.git ${SNAPFUZZ}
+
+# Install dependencies
+USER root
+RUN bash ${SNAPFUZZ}/apt-install-deps.sh
+USER ubuntu
+
+# Build Snapfuzz
+RUN bash ${SNAPFUZZ}/build.sh
+
+# Set up environment variables for Snapfuzz
+ENV AFL_PATH=${SNAPFUZZ}/builds/aflnet
+ENV PATH=${SNAPFUZZ}:${PATH}
+
+# Download and compile BFTPD without AddressSanitizer for fuzzing
+RUN cd ${WORKDIR} && \
+    mkdir ${WORKDIR}/bftpd-aflsnapfuzz && \
+    tar -zxvf bftpd-5.7.tar.gz -C ${WORKDIR}/bftpd-aflsnapfuzz --strip-components=1 && \
+    cd ${WORKDIR}/bftpd-aflsnapfuzz && \
+    patch -p1 < ${WORKDIR}/fuzzing.patch && \
+    CC=afl-clang-fast make clean all $MAKE_OPT && \
+    cp ${SNAPFUZZ}/sabre ./ && \
+    cp ${SNAPFUZZ}/libsbr-afl.so ./
+
+COPY --chown=ubuntu:ubuntu run-aflsnapfuzz.sh ${WORKDIR}/run-aflsnapfuzz

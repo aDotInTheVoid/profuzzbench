@@ -1,0 +1,45 @@
+FROM exim
+
+# Use ubuntu as default username
+USER ubuntu
+WORKDIR /home/ubuntu
+
+# Import environment variable to pass as parameter to make (e.g., to make parallel builds with -j)
+ARG MAKE_OPT
+
+# Set up Snapfuzz
+ENV SNAPFUZZ="/home/ubuntu/aflsnapfuzz"
+
+RUN git clone https://github.com/RiscInside/bootstrap-snapfuzz.git ${SNAPFUZZ}
+
+# Install dependencies
+USER root
+RUN bash ${SNAPFUZZ}/apt-install-deps.sh
+USER ubuntu
+
+# Build Snapfuzz
+RUN bash ${SNAPFUZZ}/build.sh
+
+# Set up environment variables for Snapfuzz
+ENV AFL_PATH=${SNAPFUZZ}/builds/aflnet
+ENV PATH=${SNAPFUZZ}:${PATH}
+
+# Dedicated instrumented version for StateAFL
+RUN cd ${WORKDIR} && \
+    git clone https://github.com/vegard/openssh-portable.git openssh-stateafl && \
+    cd openssh-stateafl && \
+    git checkout 7cfea58 && \
+    cp ${WORKDIR}/rand.inc . && \
+    patch -p1 < ${WORKDIR}/rand.patch && \
+    autoreconf && \
+    ./configure \
+    CC=${STATEAFL}/afl-clang-fast \
+    CFLAGS="-g -O3" \
+    --prefix=$PWD/install \
+    --with-privsep-path=$PWD/var-empty \
+    --with-sandbox=no \
+    --with-privsep-user=ubuntu && \
+    make $MAKE_OPT && \
+    make install
+
+COPY --chown=ubuntu:ubuntu run-aflsnapfuzz.sh ${WORKDIR}/run-aflsnapfuzz
