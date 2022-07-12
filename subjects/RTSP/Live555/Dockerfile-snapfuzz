@@ -1,0 +1,31 @@
+# vim:set ft=dockerfile:
+FROM live555
+
+ARG MAKE_OPT
+
+USER root
+RUN apt-get install -y \
+	cmake libsqlite3-dev libelf-dev
+
+USER ubuntu
+WORKDIR /home/ubuntu
+ENV SNAPFUZZ="/home/ubuntu/snapfuzz"
+
+# These are the "stock" fuzzers, but we only want the modified ones for snapfuzz
+# So remove to avoid confusion.
+RUN rm -rf aflnet aflnwe
+
+RUN git clone --recursive https://github.com/aDotInTheVoid/snapfuzz-omni $SNAPFUZZ && \
+	cd snapfuzz && \
+	./build.sh
+
+ENV AFL_PATH=${SNAPFUZZ}/aflnet
+ENV PATH=${AFL_PATH}:$PATH
+
+RUN rm $AFL_PATH/as
+
+# These fail for weird reasons when run with -j12, very sad
+RUN cd $WORKDIR/live555 && \
+    AFL_USE_ASAN=1 make clean all
+RUN cd $WORKDIR/live555-cov && \
+    make CFLAGS="-fprofile-arcs -ftest-coverage" CPPFLAGS="-fprofile-arcs -ftest-coverage" CXXFLAGS="-fprofile-arcs -ftest-coverage" LDFLAGS="-fprofile-arcs -ftest-coverage" clean all
