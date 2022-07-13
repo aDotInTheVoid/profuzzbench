@@ -11,6 +11,18 @@ TIMEOUT=$7    #time for fuzzing
 SKIPCOUNT=$8  #used for calculating coverage over time. e.g., SKIPCOUNT=5 means we run gcovr after every 5 test cases
 DELETE=$9
 
+echo "Running with config: {"
+echo "  docimage  = ${DOCIMAGE}"
+echo "  runs      = ${RUNS}"
+echo "  saveto    = ${SAVETO}"
+echo "  fuzzer    = ${FUZZER}"
+echo "  outdir    = ${OUTDIR}"
+echo "  options   = ${OPTIONS}"
+echo "  timeout   = ${TIMEOUT}"
+echo "  skipcount = ${SKIPCOUNT}"
+echo "}"
+echo ""
+
 WORKDIR="/home/ubuntu/experiments"
 
 #keep all container ids
@@ -18,6 +30,7 @@ cids=()
 
 #create one container for each run
 for i in $(seq 1 $RUNS); do
+  echo "RUNNING <<<" docker run --cpus=1 -d -it $DOCIMAGE /bin/bash -c "cd ${WORKDIR} && run ${FUZZER} ${OUTDIR} '${OPTIONS}' ${TIMEOUT} ${SKIPCOUNT}" ">>>"
   id=$(docker run --cpus=1 -d -it $DOCIMAGE /bin/bash -c "cd ${WORKDIR} && run ${FUZZER} ${OUTDIR} '${OPTIONS}' ${TIMEOUT} ${SKIPCOUNT}")
   cids+=(${id::12}) #store only the first 12 characters of a container ID
 done
@@ -37,7 +50,10 @@ wait
 printf "\n${FUZZER^^}: Collecting results and save them to ${SAVETO}"
 index=1
 for id in ${cids[@]}; do
-  printf "\n${FUZZER^^}: Collecting results from container ${id}"
+  printf "\n${FUZZER^^}: Collecting results from container ${id}\n"
+
+  echo docker cp ${id}:/home/ubuntu/experiments/${OUTDIR}.tar.gz ${SAVETO}/${OUTDIR}_${index}.tar.gz
+
   docker cp ${id}:/home/ubuntu/experiments/${OUTDIR}.tar.gz ${SAVETO}/${OUTDIR}_${index}.tar.gz > /dev/null
   if [ ! -z $DELETE ]; then
     printf "\nDeleting ${id}"

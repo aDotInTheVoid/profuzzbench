@@ -6,13 +6,25 @@ OPTIONS=$3    #all configured options -- to make it flexible, we only fix some o
 TIMEOUT=$4    #time for fuzzing
 SKIPCOUNT=$5  #used for calculating cov over time. e.g., SKIPCOUNT=5 means we run gcovr after every 5 test cases
 
+echo "Using Options {"
+echo "  fuzzer    = ${FUZZER}"
+echo "  outdir    = ${OUTDIR}"
+echo "  options   = ${OPTIONS}"
+echo "  timeout   = ${TIMEOUT}"
+echo "  skipcount = ${SKIPCOUNT}"
+echo "}"
+echo
+set -exo pipefail
+
 strstr() {
   [ "${1#*$2*}" = "$1" ] && return 1
   return 0
 }
 
 #Commands for afl-based fuzzers (e.g., aflnet, aflnwe)
-if $(strstr $FUZZER "afl"); then
+if $(strstr $FUZZER "afl") || $(strstr $FUZZER "snapfuzz"); then
+
+  echo "AFL-Like"
 
   TARGET_DIR=${TARGET_DIR:-"live555"}
   INPUTS=${WORKDIR}/in-rtsp

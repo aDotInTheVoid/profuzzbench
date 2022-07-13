@@ -1,4 +1,5 @@
-FROM ubuntu:20.04
+# Ugh https://bugs.launchpad.net/ubuntu/+source/glibc/+bug/1918035 comment 16
+FROM ubuntu:18.04 
 
 # Install common dependencies
 ENV DEBIAN_FRONTEND=noninteractive
@@ -93,8 +94,11 @@ RUN cd $WORKDIR && \
 RUN cd ${WORKDIR}/live555-cov/testProgs && \
     cp ${AFLNET}/tutorials/live555/sample_media_sources/*.* ./
 
-COPY --chown=ubuntu:ubuntu kill-server.sh ${WORKDIR}/kill-server
-COPY --chown=ubuntu:ubuntu in-rtsp ${WORKDIR}/in-rtsp
-COPY --chown=ubuntu:ubuntu rtsp.dict ${WORKDIR}/rtsp.dict
-COPY --chown=ubuntu:ubuntu cov_script.sh ${WORKDIR}/cov_script
-COPY --chown=ubuntu:ubuntu run.sh ${WORKDIR}/run
+# While working on Snapfuzz, quicker to place in Dockerfile-snapfuzz,
+# So I can cange without rebuilding
+
+# COPY --chown=ubuntu:ubuntu kill-server.sh ${WORKDIR}/kill-server
+# COPY --chown=ubuntu:ubuntu in-rtsp ${WORKDIR}/in-rtsp
+# COPY --chown=ubuntu:ubuntu rtsp.dict ${WORKDIR}/rtsp.dict
+# COPY --chown=ubuntu:ubuntu cov_script.sh ${WORKDIR}/cov_script
+# COPY --chown=ubuntu:ubuntu run.sh ${WORKDIR}/run

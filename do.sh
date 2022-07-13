@@ -1,0 +1,1 @@
+./scripts/execution/profuzzbench_exec_common.sh live555-snapfuzzz 1 results/live555 snapfuzz/aflnet out-lightftp-snapfuzz "-A /home/ubuntu/snapfuzz/snapfuzz/build/plugins/sbr-afl/libsbr-afl.so -P RTSP" 5 5
