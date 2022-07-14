@@ -3,10 +3,10 @@ FROM live555
 
 ARG MAKE_OPT
 
-USER root
-RUN apt-get install -y \
-	htop psmisc\
-	cmake libsqlite3-dev libelf-dev
+# USER root
+# RUN apt-get install -y \
+# 	htop psmisc\
+# 	cmake libsqlite3-dev libelf-dev
 
 USER ubuntu
 WORKDIR /home/ubuntu
@@ -34,8 +34,8 @@ RUN cd $WORKDIR/live555/testProgs && \
 	cp $SNAPFUZZ/snapfuzz/build/sabre .
 
 
-COPY --chown=ubuntu:ubuntu kill-server.sh ${WORKDIR}/kill-server
-COPY --chown=ubuntu:ubuntu in-rtsp ${WORKDIR}/in-rtsp
-COPY --chown=ubuntu:ubuntu rtsp.dict ${WORKDIR}/rtsp.dict
-COPY --chown=ubuntu:ubuntu cov_script.sh ${WORKDIR}/cov_script
-COPY --chown=ubuntu:ubuntu run.sh ${WORKDIR}/run
+# COPY --chown=ubuntu:ubuntu kill-server.sh ${WORKDIR}/kill-server
+# COPY --chown=ubuntu:ubuntu in-rtsp ${WORKDIR}/in-rtsp
+# COPY --chown=ubuntu:ubuntu rtsp.dict ${WORKDIR}/rtsp.dict
+# COPY --chown=ubuntu:ubuntu cov_script.sh ${WORKDIR}/cov_script
+# COPY --chown=ubuntu:ubuntu run.sh ${WORKDIR}/run

@@ -51,7 +51,7 @@ def main(csv_file, put, runs, cut_off, step, out_file):
   mean_df = pd.DataFrame(mean_list, columns = ['subject', 'fuzzer', 'cov_type', 'time', 'cov'])
 
   fig, axes = plt.subplots(2, 2, figsize = (20, 10))
-  fig.suptitle("Code coverage analysis")
+  fig.suptitle("Code coverage analysis for " + put)
 
   fuzznames = []
 
