@@ -17,12 +17,13 @@ def main(csv_file, put, runs, cut_off, step, out_file):
   mean_list = []
 
   for subject in [put]:
-    for fuzzer in ['aflnet', 'aflnwe']:
+    for fuzzer in ['aflnet', 'aflnwe', 'snapfuzz']:
       for cov_type in ['b_abs', 'b_per', 'l_abs', 'l_per']:
         #get subject & fuzzer & cov_type-specific dataframe
         df1 = df[(df['subject'] == subject) & 
                          (df['fuzzer'] == fuzzer) & 
                          (df['cov_type'] == cov_type)]
+        if len(df1) == 0: continue
 
         mean_list.append((subject, fuzzer, cov_type, 0, 0.0))
         for time in range(1, cut_off + 1, step):
@@ -52,7 +53,11 @@ def main(csv_file, put, runs, cut_off, step, out_file):
   fig, axes = plt.subplots(2, 2, figsize = (20, 10))
   fig.suptitle("Code coverage analysis")
 
+  fuzznames = []
+
   for key, grp in mean_df.groupby(['fuzzer', 'cov_type']):
+    if key[0] not in fuzznames:
+      fuzznames.append(key[0])
     if key[1] == 'b_abs':
       axes[0, 0].plot(grp['time'], grp['cov'])
       #axes[0, 0].set_title('Edge coverage over time (#edges)')
@@ -77,7 +82,7 @@ def main(csv_file, put, runs, cut_off, step, out_file):
       axes[1, 1].set_ylabel('Line coverage (%)')
 
   for i, ax in enumerate(fig.axes):
-    ax.legend(('AFLNet', 'AFLNwe'), loc='upper left')
+    ax.legend(fuzznames, loc='upper left')
     ax.grid()
 
   #Save to file

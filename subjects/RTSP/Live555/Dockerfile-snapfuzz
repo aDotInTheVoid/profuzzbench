@@ -30,7 +30,8 @@ RUN cd $WORKDIR/live555 && \
     AFL_USE_ASAN=1 make clean all
 RUN cd $WORKDIR/live555-cov && \
     make CFLAGS="-fprofile-arcs -ftest-coverage" CPPFLAGS="-fprofile-arcs -ftest-coverage" CXXFLAGS="-fprofile-arcs -ftest-coverage" LDFLAGS="-fprofile-arcs -ftest-coverage" clean all
-
+RUN cd $WORKDIR/live555/testProgs && \
+	cp $SNAPFUZZ/snapfuzz/build/sabre .
 
 
 COPY --chown=ubuntu:ubuntu kill-server.sh ${WORKDIR}/kill-server
