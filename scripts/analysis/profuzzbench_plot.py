@@ -82,7 +82,11 @@ def main(csv_file, put, runs, cut_off, step, out_file):
       axes[1, 1].set_ylabel('Line coverage (%)')
 
   for i, ax in enumerate(fig.axes):
-    ax.legend(fuzznames, loc='upper left')
+    if '#' in ax.get_ylabel():
+      leg_loc = 'lower right'
+    else:
+      leg_loc = 'upper left'
+    ax.legend(fuzznames, loc=leg_loc)
     ax.grid()
 
   #Save to file
