@@ -1,0 +1,25 @@
+# vim:set ft=dockerfile:
+FROM dcmtk
+
+ARG MAKE_OPT
+
+WORKDIR /home/ubuntu
+ENV SNAPFUZZ="/home/ubuntu/snapfuzz"
+
+RUN git clone --recursive https://github.com/aDotInTheVoid/snapfuzz-omni $SNAPFUZZ && \
+	cd snapfuzz && \
+	./build.sh
+
+ENV AFL_PATH=${SNAPFUZZ}/aflnet
+ENV PATH=${AFL_PATH}:$PATH
+
+RUN cd $WORKDIR/dcmtk/build && \
+    make clean && \
+    AFL_USE_ASAN=1 make dcmqrscp $MAKE_OPT
+
+RUN ls -l $WORKDIR
+
+RUN cd $WORKDIR/dcmtk/build/bin && \
+    ls -l .. && \
+    ls -l && \
+    cp $SNAPFUZZ/snapfuzz/build/sabre .
