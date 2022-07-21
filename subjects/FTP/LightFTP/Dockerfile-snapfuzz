@@ -1,0 +1,24 @@
+FROM lightftp
+
+USER ubuntu
+WORKDIR /home/ubuntu
+ENV SNAPFUZZ="/home/ubuntu/snapfuzz"
+
+# These are the "stock" fuzzers, but we only want the modified ones for snapfuzz
+# So remove to avoid confusion.
+RUN rm -rf aflnet aflnwe
+
+RUN git clone --recursive https://github.com/aDotInTheVoid/snapfuzz-omni $SNAPFUZZ && \
+	cd snapfuzz && \
+	./build.sh
+
+ENV AFL_PATH=${SNAPFUZZ}/aflnet
+ENV PATH=${AFL_PATH}:$PATH
+
+RUN rm $AFL_PATH/as
+
+RUN cd $WORKDIR/LightFTP/Source/Release && \
+    AFL_USE_ASAN=1 CC=afl-clang-fast make clean all $MAKE_OPT
+
+RUN cd $WORKDIR/LightFTP/Source/Release && \
+    cp $SNAPFUZZ/snapfuzz/build/sabre .
