@@ -77,7 +77,7 @@ for id in ${cids[@]}; do
   echo docker cp ${id}:/home/ubuntu/experiments/${OUTDIR}.tar.gz ${SAVETO}/${OUTDIR}_${index}.tar.gz
 
   docker cp ${id}:/home/ubuntu/experiments/${OUTDIR}.tar.gz ${SAVETO}/${OUTDIR}_${index}.tar.gz > /dev/null
-  if [ $DELETE == "1" ]; then
+  if [ $DELETE -eq "1" ]; then
     printf "\nDeleting ${id}"
     docker rm ${id} # Remove container now that we don't need it
   fi
