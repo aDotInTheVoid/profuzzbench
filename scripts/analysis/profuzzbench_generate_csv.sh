@@ -57,3 +57,5 @@ for fuzzer in $fuzzers; do
     convert $fuzzer $prog $i out-${prog}-${fuzzer}-${i}/cov_over_time.csv $covfile
   done 
 done
+
+printf "\n"

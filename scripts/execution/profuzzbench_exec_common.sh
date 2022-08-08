@@ -9,7 +9,12 @@ OUTDIR=$5     #name of the output folder created inside the docker container
 OPTIONS=$6    #all configured options for fuzzing
 TIMEOUT=$7    #time for fuzzing
 SKIPCOUNT=$8  #used for calculating coverage over time. e.g., SKIPCOUNT=5 means we run gcovr after every 5 test cases
-DELETE=$9
+NCPUS=$9
+DELETE=${10}
+
+if [ -z $NCPUS ]; then
+  NCPUS="--cpus=1"
+fi
 
 echo "Running with config: {"
 echo "  docimage  = ${DOCIMAGE}"
@@ -20,8 +25,12 @@ echo "  outdir    = ${OUTDIR}"
 echo "  options   = ${OPTIONS}"
 echo "  timeout   = ${TIMEOUT}"
 echo "  skipcount = ${SKIPCOUNT}"
+echo "  ncpus     = ${NCPUS}"
+echo "  delete    = ${DELETE}"
 echo "}"
 echo ""
+
+
 
 WORKDIR="/home/ubuntu/experiments"
 
@@ -30,8 +39,8 @@ cids=()
 
 #create one container for each run
 for i in $(seq 1 $RUNS); do
-  echo "RUNNING <<<" docker run --cpus=2 -d -it $DOCIMAGE /bin/bash -c "cd ${WORKDIR} && run ${FUZZER} ${OUTDIR} '${OPTIONS}' ${TIMEOUT} ${SKIPCOUNT}" ">>>"
-  id=$(docker run --cpus=0 -d -it $DOCIMAGE /bin/bash -c "cd ${WORKDIR} && run ${FUZZER} ${OUTDIR} '${OPTIONS}' ${TIMEOUT} ${SKIPCOUNT}")
+  echo "RUNNING <<<" docker run $NCPUS -d -it $DOCIMAGE /bin/bash -c "cd ${WORKDIR} && run ${FUZZER} ${OUTDIR} '${OPTIONS}' ${TIMEOUT} ${SKIPCOUNT}" ">>>"
+  id=$(docker run $NCPUS -d -it $DOCIMAGE /bin/bash -c "cd ${WORKDIR} && run ${FUZZER} ${OUTDIR} '${OPTIONS}' ${TIMEOUT} ${SKIPCOUNT}")
   cids+=(${id::12}) #store only the first 12 characters of a container ID
 done
 
@@ -52,10 +61,12 @@ index=1
 for id in ${cids[@]}; do
   printf "\n${FUZZER^^}: Collecting results from container ${id}\n"
 
+  # TODO: Pull out fuzz_stats
+
   echo docker cp ${id}:/home/ubuntu/experiments/${OUTDIR}.tar.gz ${SAVETO}/${OUTDIR}_${index}.tar.gz
 
   docker cp ${id}:/home/ubuntu/experiments/${OUTDIR}.tar.gz ${SAVETO}/${OUTDIR}_${index}.tar.gz > /dev/null
-  if [ ! -z $DELETE ]; then
+  if [ $DELETE == "1" ]; then
     printf "\nDeleting ${id}"
     docker rm ${id} # Remove container now that we don't need it
   fi
