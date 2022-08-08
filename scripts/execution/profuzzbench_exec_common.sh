@@ -10,10 +10,14 @@ OPTIONS=$6    #all configured options for fuzzing
 TIMEOUT=$7    #time for fuzzing
 SKIPCOUNT=$8  #used for calculating coverage over time. e.g., SKIPCOUNT=5 means we run gcovr after every 5 test cases
 NCPUS=$9
-DELETE=${10}
+STARTCPU=${10}
+DELETE=${11}
 
 if [ -z $NCPUS ]; then
-  NCPUS="--cpus=1"
+  NCPUS="1"
+fi
+if [ -z $STARTCPU ]; then
+  STARTCPU="0"
 fi
 
 echo "Running with config: {"
@@ -26,6 +30,7 @@ echo "  options   = ${OPTIONS}"
 echo "  timeout   = ${TIMEOUT}"
 echo "  skipcount = ${SKIPCOUNT}"
 echo "  ncpus     = ${NCPUS}"
+echo "  startcpu  = ${STARTCPU}"
 echo "  delete    = ${DELETE}"
 echo "}"
 echo ""
@@ -38,9 +43,15 @@ WORKDIR="/home/ubuntu/experiments"
 cids=()
 
 #create one container for each run
-for i in $(seq 1 $RUNS); do
-  echo "RUNNING <<<" docker run $NCPUS -d -it $DOCIMAGE /bin/bash -c "cd ${WORKDIR} && run ${FUZZER} ${OUTDIR} '${OPTIONS}' ${TIMEOUT} ${SKIPCOUNT}" ">>>"
-  id=$(docker run $NCPUS -d -it $DOCIMAGE /bin/bash -c "cd ${WORKDIR} && run ${FUZZER} ${OUTDIR} '${OPTIONS}' ${TIMEOUT} ${SKIPCOUNT}")
+_run=$(($RUNS-1))
+for i in $(seq 0 $_run); do
+  echo $i
+
+  cpulo=$(($STARTCPU + $NCPUS*$i))
+  cpuhi=$(($cpulo + $NCPUS - 1))
+
+  echo "RUNNING <<<" docker run --cpuset-cpus $cpulo-$cpuhi -d -it $DOCIMAGE /bin/bash -c "cd ${WORKDIR} && run ${FUZZER} ${OUTDIR} '${OPTIONS}' ${TIMEOUT} ${SKIPCOUNT}" ">>>"
+  id=$(docker run --cpuset-cpus $cpulo-$cpuhi -d -it $DOCIMAGE /bin/bash -c "cd ${WORKDIR} && run ${FUZZER} ${OUTDIR} '${OPTIONS}' ${TIMEOUT} ${SKIPCOUNT}")
   cids+=(${id::12}) #store only the first 12 characters of a container ID
 done
 
