@@ -21,6 +21,7 @@ RUN apt-get -y update && \
     gdb \
     netcat \
     strace \
+    cmake libsqlite3-dev libelf-dev \
     wget
 
 # Add a new user ubuntu, pass: ubuntu
@@ -63,6 +64,7 @@ RUN mkdir $WORKDIR
 
 USER root
 RUN apt-get -y install dnsutils
+USER ubuntu
 
 COPY --chown=ubuntu:ubuntu dnsmasq.patch ${WORKDIR}/dnsmasq.patch
 
@@ -92,5 +94,7 @@ COPY --chown=ubuntu:ubuntu cov_script.sh ${WORKDIR}/cov_script
 COPY --chown=ubuntu:ubuntu run.sh ${WORKDIR}/run
 COPY --chown=ubuntu:ubuntu dnsmasq.conf ${WORKDIR}/dnsmasq.conf
 
+USER root
 RUN cp ${WORKDIR}/dnsmasq.conf /etc/ && \
     echo address=/test.com/5.5.5.5 | sudo tee -a /etc/dnsmasq.conf
+USER ubuntu
