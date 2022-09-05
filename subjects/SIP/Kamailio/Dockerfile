@@ -20,6 +20,7 @@ RUN apt-get -y update && \
     vim \
     gdb \
     netcat \
+    cmake libsqlite3-dev libelf-dev \
     strace \
     wget
 

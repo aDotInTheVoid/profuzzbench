@@ -1,0 +1,23 @@
+FROM kamailio
+
+# Common
+USER ubuntu
+WORKDIR /home/ubuntu
+ENV SNAPFUZZ="/home/ubuntu/snapfuzz"
+RUN rm -rf aflnet aflnwe
+RUN git clone --recursive https://github.com/aDotInTheVoid/snapfuzz-omni $SNAPFUZZ && \
+	cd snapfuzz && \
+	./build.sh
+ENV AFL_PATH=${SNAPFUZZ}/aflnet
+ENV PATH=${AFL_PATH}:$PATH
+RUN rm $AFL_PATH/as
+
+
+RUN cd $WORKDIR && \
+    cd kamailio && \
+    make clean && \
+    CC=afl-clang-fast make MEMPKG=sys cfg && \
+    AFL_USE_ASAN=1 CC=afl-clang-fast make all $MAKE_OPT
+
+RUN cd  $WORKDIR/"kamailio" && \
+    cp $SNAPFUZZ/snapfuzz/build/sabre .
