@@ -1,4 +1,4 @@
-FROM kamailio
+FROM exim
 
 # Common
 USER ubuntu
@@ -12,12 +12,14 @@ ENV AFL_PATH=${SNAPFUZZ}/aflnet
 ENV PATH=${AFL_PATH}:$PATH
 RUN rm $AFL_PATH/as
 
-
-RUN cd $WORKDIR && \
-    cd kamailio && \
+USER root
+# Download, compile and install Exim for fuzzing
+RUN cd ${WORKDIR} && \
+    cd exim && \
+    cd src && \
     make clean && \
-    CC=afl-clang-fast make MEMPKG=sys cfg && \
-    AFL_USE_ASAN=1 CC=afl-clang-fast make all $MAKE_OPT
+    AFL_USE_ASAN=1 make CC=afl-clang-fast clean all install $MAKE_OPT
 
-RUN cd  $WORKDIR/"kamailio" && \
+RUN cd  $WORKDIR/"exim" && \
     cp $SNAPFUZZ/snapfuzz/build/sabre .
+USER ubuntu

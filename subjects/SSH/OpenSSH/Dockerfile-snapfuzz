@@ -1,4 +1,4 @@
-FROM kamailio
+FROM openssh
 
 # Common
 USER ubuntu
@@ -12,12 +12,23 @@ ENV AFL_PATH=${SNAPFUZZ}/aflnet
 ENV PATH=${AFL_PATH}:$PATH
 RUN rm $AFL_PATH/as
 
-
-RUN cd $WORKDIR && \
-    cd kamailio && \
+USER root
+# Download and compile OpenSSH for fuzzing
+RUN cd ${WORKDIR} && \
+    cd openssh && \
     make clean && \
-    CC=afl-clang-fast make MEMPKG=sys cfg && \
-    AFL_USE_ASAN=1 CC=afl-clang-fast make all $MAKE_OPT
+    ./configure \
+    CC="afl-clang-fast" \
+    CFLAGS="-g -O3 -I$WORKDIR/openssl-install/include" \
+    --prefix=$PWD/install \
+    --with-openssl=$WORKDIR/openssl-install \
+    --with-ldflags="-L$WORKDIR/openssl-install/lib" \
+    --with-privsep-path=$PWD/var-empty \
+    --with-sandbox=no \
+    --with-privsep-user=ubuntu && \
+    AFL_USE_ASAN=1 make $MAKE_OPT && \
+    make install
 
-RUN cd  $WORKDIR/"kamailio" && \
+RUN cd  $WORKDIR/"openssh" && \
     cp $SNAPFUZZ/snapfuzz/build/sabre .
+USER ubuntu
