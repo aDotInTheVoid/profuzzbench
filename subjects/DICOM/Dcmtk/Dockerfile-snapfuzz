@@ -20,6 +20,4 @@ RUN cd $WORKDIR/dcmtk/build && \
 RUN ls -l $WORKDIR
 
 RUN cd $WORKDIR/dcmtk/build/bin && \
-    ls -l .. && \
-    ls -l && \
     cp $SNAPFUZZ/snapfuzz/build/sabre .
