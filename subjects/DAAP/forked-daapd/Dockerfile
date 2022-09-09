@@ -20,6 +20,7 @@ RUN apt-get -y update && \
     gdb \
     netcat \
     strace \
+    cmake libsqlite3-dev libelf-dev \
     wget
 
 # Add a new user ubuntu, pass: ubuntu

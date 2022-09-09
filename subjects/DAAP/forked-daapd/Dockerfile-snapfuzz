@@ -1,0 +1,26 @@
+FROM forked-daapd
+
+# Common
+USER ubuntu
+WORKDIR /home/ubuntu
+ENV SNAPFUZZ="/home/ubuntu/snapfuzz"
+RUN rm -rf aflnet aflnwe
+RUN git clone --recursive https://github.com/aDotInTheVoid/snapfuzz-omni $SNAPFUZZ && \
+	cd snapfuzz && \
+	./build.sh
+ENV AFL_PATH=${SNAPFUZZ}/aflnet
+ENV PATH=${AFL_PATH}:$PATH
+RUN rm $AFL_PATH/as
+
+ENV AFLNET=${AFL_PATH}
+
+
+RUN cd $WORKDIR/forked-daapd && \
+    make clean && \
+    CC=$AFLNET/afl-clang-fast CFLAGS="-DSQLITE_CORE" ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var  --disable-mpd --disable-itunes --disable-lastfm --disable-spotify --disable-verification  --disable-shared --enable-static && \
+    AFL_USE_ASAN=1 make -C src/ SMARTPL2SQL.c SMARTPL.c DAAP2SQL.c DAAPLexer.c RSPLexer.c RSP2SQL.c && \
+    AFL_USE_ASAN=1 make clean all $MAKE_OPT
+
+
+RUN cd $WORKDIR/ && \
+    cp $SNAPFUZZ/snapfuzz/build/sabre .
