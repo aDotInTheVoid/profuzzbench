@@ -31,4 +31,3 @@ RUN cd ${WORKDIR} && \
 
 RUN cd  $WORKDIR/"openssh" && \
     cp $SNAPFUZZ/snapfuzz/build/sabre .
-USER ubuntu
