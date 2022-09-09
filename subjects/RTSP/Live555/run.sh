@@ -22,7 +22,7 @@ strstr() {
 }
 
 #Commands for afl-based fuzzers (e.g., aflnet, aflnwe)
-if $(strstr $FUZZER "afl") || $(strstr $FUZZER "snapfuzz"); then
+if $(strstr $FUZZER "afl") then
 
   echo "AFL-Like"
 

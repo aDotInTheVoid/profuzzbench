@@ -94,9 +94,6 @@ RUN cd $WORKDIR && \
 RUN cd ${WORKDIR}/live555-cov/testProgs && \
     cp ${AFLNET}/tutorials/live555/sample_media_sources/*.* ./
 
-# While working on Snapfuzz, quicker to place in Dockerfile-snapfuzz,
-# So I can cange without rebuilding
-
 COPY --chown=ubuntu:ubuntu kill-server.sh ${WORKDIR}/kill-server
 COPY --chown=ubuntu:ubuntu in-rtsp ${WORKDIR}/in-rtsp
 COPY --chown=ubuntu:ubuntu rtsp.dict ${WORKDIR}/rtsp.dict
